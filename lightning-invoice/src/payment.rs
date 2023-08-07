@@ -160,8 +160,7 @@ fn pay_invoice_using_amount<P: Deref>(
 		payment_params,
 		final_value_msat: amount_msats,
 	};
-	let override_rgb_amount = invoice.rgb_amount();
-	payer.send_payment(payment_hash, recipient_onion, payment_id, route_params, retry_strategy, override_rgb_amount)
+	payer.send_payment(payment_hash, recipient_onion, payment_id, route_params, retry_strategy)
 }
 
 fn expiry_time_from_unix_epoch(invoice: &Invoice) -> Duration {
@@ -187,7 +186,6 @@ trait Payer {
 	fn send_payment(
 		&self, payment_hash: PaymentHash, recipient_onion: RecipientOnionFields,
 		payment_id: PaymentId, route_params: RouteParameters, retry_strategy: Retry,
-		override_rgb_amount: Option<u64>,
 	) -> Result<(), PaymentError>;
 }
 
@@ -205,9 +203,8 @@ where
 	fn send_payment(
 		&self, payment_hash: PaymentHash, recipient_onion: RecipientOnionFields,
 		payment_id: PaymentId, route_params: RouteParameters, retry_strategy: Retry,
-		override_rgb_amount: Option<u64>,
 	) -> Result<(), PaymentError> {
-		self.send_payment(payment_hash, recipient_onion, payment_id, route_params, retry_strategy, override_rgb_amount)
+		self.send_payment(payment_hash, recipient_onion, payment_id, route_params, retry_strategy)
 			.map_err(PaymentError::Sending)
 	}
 }
