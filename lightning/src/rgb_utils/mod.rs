@@ -133,6 +133,11 @@ pub fn read_rgb_transfer_info(path: &str) -> TransferInfo {
 	serde_json::from_str(&serialized_info).expect("valid transfer info")
 }
 
+/// Whether a transfer is colored
+pub fn is_transfer_colored(path: &str) -> bool {
+	PathBuf::from(path).exists()
+}
+
 /// Write TransferInfo file
 pub fn write_rgb_transfer_info(path: &PathBuf, info: &TransferInfo) {
 	let serialized_info = serde_json::to_string(&info).expect("valid transfer info");
