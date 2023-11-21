@@ -3187,7 +3187,8 @@ where
 					// phantom or an intercept.
 					if (self.default_configuration.accept_intercept_htlcs &&
 						fake_scid::is_valid_intercept(&self.fake_scid_rand_bytes, outgoing_scid, &self.chain_hash)) ||
-						fake_scid::is_valid_phantom(&self.fake_scid_rand_bytes, outgoing_scid, &self.chain_hash)
+						fake_scid::is_valid_phantom(&self.fake_scid_rand_bytes, outgoing_scid, &self.chain_hash) ||
+						fake_scid::is_valid_swap(outgoing_scid)
 					{
 						None
 					} else {
@@ -3459,7 +3460,7 @@ where
 		let rgb_payment_info_hash_path = self.ldk_data_dir.join(htlc_payment_hash);
 		let path = if rgb_payment_info_hash_path.exists() {
 			let rgb_payment_info = parse_rgb_payment_info(&rgb_payment_info_hash_path);
-			if !rgb_payment_info.override_route_amount {
+			if rgb_payment_info.override_route_amount {
 				let mut path = path.clone();
 				for hop in &mut path.hops {
 					hop.rgb_amount = Some(rgb_payment_info.amount);
