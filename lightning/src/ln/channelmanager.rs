@@ -3157,15 +3157,15 @@ where
 				return_err!(err_msg, err_code, &[0; 0]);
 			},
 		};
-		let (outgoing_scid, outgoing_amt_msat, outgoing_cltv_value, next_packet_pk_opt) = match next_hop {
+		let (outgoing_scid, outgoing_amt_msat, outgoing_cltv_value, next_packet_pk_opt, outgoing_amount_rgb) = match next_hop {
 			onion_utils::Hop::Forward {
 				next_hop_data: msgs::InboundOnionPayload::Forward {
-					short_channel_id, amt_to_forward, outgoing_cltv_value, ..
+					short_channel_id, amt_to_forward, outgoing_cltv_value, rgb_amount_to_forward, ..
 				}, ..
 			} => {
 				let next_packet_pk = onion_utils::next_hop_pubkey(&self.secp_ctx,
 					msg.onion_routing_packet.public_key.unwrap(), &shared_secret);
-				(short_channel_id, amt_to_forward, outgoing_cltv_value, Some(next_packet_pk))
+				(short_channel_id, amt_to_forward, outgoing_cltv_value, Some(next_packet_pk), rgb_amount_to_forward)
 			},
 			// We'll do receive checks in [`Self::construct_pending_htlc_info`] so we have access to the
 			// inbound channel's state.
@@ -3249,6 +3249,18 @@ where
 				}
 				if let Err((err, code)) = chan.htlc_satisfies_config(&msg, outgoing_amt_msat, outgoing_cltv_value) {
 					break Some((err, code, chan_update_opt));
+				}
+				match (msg.amount_rgb, outgoing_amount_rgb) {
+					(Some(_), None) | (None, Some(_)) => {
+						break Some(("Refusing to forward a non-authorized swap.", 0x1000 | 11, chan_update_opt)); // amount_below_minimum
+					},
+					(None, None) => {},
+					(Some(x), Some(y)) if x == y => {
+						log_trace!(self.logger, "Forwarding RGB payment of value: {}", x);
+					},
+					_ => {
+						break Some(("Refusing to forward a payment with non-matching RGB amount", 0x1000 | 11, chan_update_opt)); // amount_below_minimum
+					}
 				}
 				chan_update_opt
 			} else {
